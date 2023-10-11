@@ -1,0 +1,253 @@
+---
+title: "Project 2"
+output: "github_document"
+date: "2023-10-09"
+author: "Ankit Gupta"
+---
+
+```{r setup, include=FALSE}
+rmarkdown::render("Project2_Gupta_PokeAPI.Rmd")
+library(httr)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(tidyr)
+```
+
+## Pokemon Vignette
+##### The objective for this project is to provide valuble endpoints for user to query information related to be beloved show Pokemon
+
+
+Required packages for running this vignette are: httr, dplyr, ggplot2, ggthemes, and tidyr,gridextra, plotly, heatmaply, psych
+```{r startup, error = TRUE }
+#We will choose an API that provides Pokemon data for our exploration. To accomplish this, we will use the Poke API, which offers comprehensive pokemon-related data.
+knitr::opts_chunk$set(echo = TRUE)
+# Define API base URL
+base_url <- "https://pokeapi.co/api/v2/pokemon"
+
+# Function to get Pokémon details
+get_pokemon_details <- function(pokemon_name_or_id) {
+  url <- paste(base_url, "/", pokemon_name_or_id, sep = "")
+  response <- GET(url)
+  data <- content(response, "parsed")
+  return(data)
+}
+
+```
+
+Now we have started our api integration, we will work in a couple of functions bringing relevant information relating to statistics of interest to pokemon fanatics.
+
+
+```{r pre, error = TRUE }
+
+# Define API base URL for abilities
+base_url_abilities <- "https://pokeapi.co/api/v2/ability"
+
+# Function to get ability details
+get_pokemon_ability <- function(ability_name_or_id) {
+  url <- paste(base_url_abilities, "/", ability_name_or_id, sep = "")
+  response <- GET(url)
+  data <- content(response, "parsed")
+  return(data)
+}
+
+# Define API base URL for moves
+base_url_moves <- "https://pokeapi.co/api/v2/move"
+
+# Function to get a list of moves
+get_pokemon_moves <- function() {
+  url <- base_url_moves
+  response <- GET(url)
+  data <- content(response, "parsed")
+  return(data)
+}
+
+# Define API base URL for types
+base_url_types <- "https://pokeapi.co/api/v2/type"
+
+# Function to get a list of Pokémon types
+get_pokemon_types <- function() {
+  url <- base_url_types
+  response <- GET(url)
+  data <- content(response, "parsed")
+  return(data)
+}
+
+# Function to get statistics for Pokémon of a specific type
+get_pokemon_type_stats <- function(pokemon_type) {
+  url <- paste(base_url_types, "/", pokemon_type, sep = "")
+  response <- GET(url)
+  data <- content(response, "parsed")
+  return(data)
+}
+
+# Define API base URL for habitats
+base_url_habitats <- "https://pokeapi.co/api/v2/pokemon-habitat"
+
+# Function to get habitat details
+get_pokemon_habitat <- function(habitat_name_or_id) {
+  url <- paste(base_url_habitats, "/", habitat_name_or_id, sep = "")
+  response <- GET(url)
+  data <- content(response, "parsed")
+  return(data)
+}
+
+# Define API base URL for shapes
+base_url_shapes <- "https://pokeapi.co/api/v2/pokemon-shape"
+
+# Function to get shape details
+get_pokemon_shape <- function(shape_name_or_id) {
+  url <- paste(base_url_shapes, "/", shape_name_or_id, sep = "")
+  response <- GET(url)
+  data <- content(response, "parsed")
+  return(data)
+}
+
+# Define API base URL for colors
+base_url_colors <- "https://pokeapi.co/api/v2/pokemon-color"
+
+# Function to get color details
+get_pokemon_color <- function(color_name_or_id) {
+  url <- paste(base_url_colors, "/", color_name_or_id, sep = "")
+  response <- GET(url)
+  data <- content(response, "parsed")
+  return(data)
+}
+
+base_url_types <- "https://pokeapi.co/api/v2/type"
+url <- base_url_types
+response <- GET(url)
+response
+```
+
+We have now the ability to query endpoints relating to pokemon habitats and physical attributes. We are able to provide users pertient details on their favorite pokemon, which is almost their own pokedex!
+
+```{r post, error = TRUE }
+
+# Collect details about specific Pokémon
+charizard_details <- get_pokemon_details("charizard")
+pikachu_details <- get_pokemon_details("pikachu")
+
+# Collect details about a specific ability
+overgrow_ability <- get_pokemon_ability("overgrow")
+
+# Collect a list of moves
+moves_list <- get_pokemon_moves()
+
+# Collect a list of Pokémon types
+types_list <- get_pokemon_types()
+
+# Collect details about a specific habitat
+cave_habitat <- get_pokemon_habitat("cave")
+
+# Collect details about a specific shape
+ball_shape <- get_pokemon_shape("ball")
+
+# Collect details about a specific color
+red_color <- get_pokemon_color("red")
+
+# Collect statistics for Fire-type Pokémon
+fire_type_stats <- get_pokemon_type_stats("fire")
+
+
+```
+With EDA, I want to get an understanding of the physical characterstics of pokemon, and look at the experience thresholds they may have. We may see stratification between more common vs rarer pokemon.
+```{r viz, echo=TRUE, ERROR = TRUE}
+
+library(httr)
+library(jsonlite)
+
+pokemon <- read.csv('pokemon.csv')
+
+head(pokemon)
+
+
+# Contingency tables for height, weight, exp
+table1 <- table(pokemon$height, pokemon$weight)
+print("Contingency Table for height and weight")
+
+
+
+table2 <- table(pokemon$height, pokemon$base_experience)
+print("Contingency Table for height and exp")
+
+
+
+table3 <- table(pokemon$weight, pokemon$base_experience)
+print("Contingency Table for weight and exp")
+
+#Numerical summary
+# Load the psych package
+library(psych)
+
+
+# Create a subset of the dataframe with the columns you want to analyze
+subset_data <- pokemon[, c("height", "weight", "base_experience")]
+
+# Generate complex numerical summaries for center and spread
+df <- describe(subset_data)
+df
+
+#interesting numerical analysis. Note high kurtosis and skew for height variable
+#Did not print in markdown due to large output. General skewness to data
+```
+#Having issues with live API - so will read from raw file stemming from function instead
+
+```{r plotter, echo = TRUE}
+# Load the required library
+library(ggplot2)
+library(gridExtra)
+
+# 1. Create a Bar Plot for Base Experience
+base_experience_plot <- ggplot(pokemon, aes(x = identifier, y = base_experience)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Base Experience by Pokemon", x = "Pokemon", y = "Base Experience") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# 2. Create a Scatter Plot for Height vs. Weight
+scatter_plot <- ggplot(pokemon, aes(x = height, y = weight)) +
+  geom_point(aes(color = identifier)) +
+  labs(title = "Height vs. Weight of Pokemon", x = "Height", y = "Weight") +
+  theme(legend.position = "none")
+
+# 3. Create a Histogram for Heights
+height_histogram <- ggplot(pokemon, aes(x = height)) +
+  geom_histogram(fill = "lightgreen", bins = 20) +
+  labs(title = "Distribution of Pokemon Heights", x = "Height", y = "Count")
+
+# 4. Create a Box Plot for Base Experience
+base_experience_boxplot <- ggplot(pokemon, aes(y = base_experience)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "Box Plot of Base Experience", x = "", y = "Base Experience")
+
+# 5. Create a Bar Plot for Species Counts
+species_counts_plot <- ggplot(pokemon, aes(x = identifier)) +
+  geom_bar(fill = "lightcoral") +
+  labs(title = "Number of Pokemon Species", x = "Pokemon", y = "Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Display the plots
+library(gridExtra)
+grid.arrange(base_experience_plot, scatter_plot, height_histogram, base_experience_boxplot, species_counts_plot, ncol = 2)
+
+
+# As we can see most of our data is skewed to the right. In all buckets (height, weight, experience), we see usual lower values with a few upward values present. This could be due to legendary pokemon which have great proportions and experience
+```
+
+Awesome 3D plot
+```{r unique, echo = TRUE}
+library(ggplot2)
+library(plotly)
+# Create a 3D scatter plot using plotly
+scatter3d <- plot_ly(pokemon, x = ~height, y = ~weight, z = ~base_experience, color = ~identifier, 
+                     text = ~identifier, marker = list(size = 3)) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = "Height"), 
+                      yaxis = list(title = "Weight"), 
+                      zaxis = list(title = "Base Experience")))
+
+# Display the 3D graph
+scatter3d
+
+#Plot reiterates previous takeaway, with few outliers on the high end due to legendary status.
+```
